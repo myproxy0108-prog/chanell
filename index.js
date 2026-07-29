@@ -403,7 +403,7 @@ function getHtmlPage() {
     async function loadRooms() {
       try {
         const rooms = await apiRequest('/api/rooms');
-        document.getElementById('roomCount').innerText = `(${rooms.length})`;
+        document.getElementById('roomCount').innerText = `${rooms.length}`;
         renderRoomList(rooms);
       } catch (err) {
         console.error(err);
