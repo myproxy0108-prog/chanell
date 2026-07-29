@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 3000;
 
 // Chatwork API Fetcher
 async function cwFetch(endpoint, apiKey, options = {}) {
-  const reqUrl = `https://api.chatwork.com/v2${endpoint}`;
+  const reqUrl = 'https://api.chatwork.com/v2' + endpoint;
   const headers = {
     'X-ChatWorkToken': apiKey,
     ...(options.headers || {})
@@ -27,7 +27,7 @@ async function cwFetch(endpoint, apiKey, options = {}) {
 
   if (!response.ok) {
     const errorMsg = typeof data === 'object' ? JSON.stringify(data) : data;
-    throw new Error(`Chatwork API Error (${response.status}): ${errorMsg}`);
+    throw new Error('Chatwork API Error (' + response.status + '): ' + errorMsg);
   }
 
   return data;
@@ -83,14 +83,14 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/messages' && req.method === 'GET') {
         const roomId = parsedUrl.query.room_id;
         if (!roomId) return sendJSON(400, { error: 'room_id が指定されていません' });
-        const data = await cwFetch(`/rooms/${roomId}/messages?force=1`, apiKey);
+        const data = await cwFetch('/rooms/' + roomId + '/messages?force=1', apiKey);
         return sendJSON(200, data);
       }
 
       if (pathname === '/api/members' && req.method === 'GET') {
         const roomId = parsedUrl.query.room_id;
         if (!roomId) return sendJSON(400, { error: 'room_id が指定されていません' });
-        const data = await cwFetch(`/rooms/${roomId}/members`, apiKey);
+        const data = await cwFetch('/rooms/' + roomId + '/members', apiKey);
         return sendJSON(200, data);
       }
 
@@ -104,7 +104,7 @@ const server = http.createServer(async (req, res) => {
               return sendJSON(400, { error: 'room_id と body は必須です' });
             }
             const postBody = new URLSearchParams({ body: params.body }).toString();
-            const data = await cwFetch(`/rooms/${params.room_id}/messages`, apiKey, {
+            const data = await cwFetch('/rooms/' + params.room_id + '/messages', apiKey, {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
               body: postBody
@@ -347,19 +347,18 @@ function getHtmlPage() {
   </div>
 
   <script>
-    let currentApiKey = localStorage.getItem('cw_api_key') || '';
-    let currentRoomId = null;
-    let currentMembersMap = {};
-    let pollingTimer = null;
+    var currentApiKey = localStorage.getItem('cw_api_key') || '';
+    var currentRoomId = null;
+    var currentMembersMap = {};
+    var pollingTimer = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', function() {
       if (currentApiKey) {
         document.getElementById('apiKeyInput').value = currentApiKey;
         initChat();
       }
 
-      // Enterキー送信対応
-      document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      document.getElementById('chatInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
           if (document.getElementById('enterSendCheck').checked) {
             e.preventDefault();
@@ -370,21 +369,22 @@ function getHtmlPage() {
     });
 
     function saveApiKey() {
-      const key = document.getElementById('apiKeyInput').value.trim();
+      var key = document.getElementById('apiKeyInput').value.trim();
       if (!key) return alert('API Keyを入力してください');
       localStorage.setItem('cw_api_key', key);
       currentApiKey = key;
       initChat();
     }
 
-    async function apiRequest(endpoint, options = {}) {
-      const headers = {
-        'X-ChatWorkToken': currentApiKey,
-        ...(options.headers || {})
-      };
-      const res = await fetch(endpoint, { ...options, headers });
+    async function apiRequest(endpoint, options) {
+      options = options || {};
+      var headers = Object.assign({
+        'X-ChatWorkToken': currentApiKey
+      }, options.headers || {});
+
+      var res = await fetch(endpoint, Object.assign({}, options, { headers: headers }));
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({ error: res.statusText }));
+        var errData = await res.json().catch(function() { return { error: res.statusText }; });
         throw new Error(errData.error || 'エラーが発生しました');
       }
       return await res.json();
@@ -392,7 +392,7 @@ function getHtmlPage() {
 
     async function initChat() {
       try {
-        const me = await apiRequest('/api/me');
+        var me = await apiRequest('/api/me');
         document.getElementById('userInfo').innerText = me.name;
         loadRooms();
       } catch (err) {
@@ -402,8 +402,8 @@ function getHtmlPage() {
 
     async function loadRooms() {
       try {
-        const rooms = await apiRequest('/api/rooms');
-        document.getElementById('roomCount').innerText = `${rooms.length}`;
+        var rooms = await apiRequest('/api/rooms');
+        document.getElementById('roomCount').innerText = '(' + rooms.length + ')';
         renderRoomList(rooms);
       } catch (err) {
         console.error(err);
@@ -411,33 +411,31 @@ function getHtmlPage() {
     }
 
     function renderRoomList(rooms) {
-      const listEl = document.getElementById('chatList');
+      var listEl = document.getElementById('chatList');
       if (!rooms || rooms.length === 0) {
         listEl.innerHTML = '<div class="empty-state">チャットがありません</div>';
         return;
       }
 
-      listEl.innerHTML = rooms.map(room => {
-        const activeClass = room.room_id === currentRoomId ? 'active' : '';
-        const pin = room.sticky ? '<span class="pin-icon">📌</span>' : '';
-        const avatar = room.icon_path || 'https://assets.chatwork.com/images/common/avatar/default_room.svg';
+      listEl.innerHTML = rooms.map(function(room) {
+        var activeClass = room.room_id === currentRoomId ? 'active' : '';
+        var pin = room.sticky ? '<span class="pin-icon">📌</span>' : '';
+        var avatar = room.icon_path || 'https://assets.chatwork.com/images/common/avatar/default_room.svg';
 
-        return `
-          <div class="chat-item ${activeClass}" onclick="selectRoom(${room.room_id}, '${escapeHtml(room.name)}')">
-            <img class="chat-avatar" src="${avatar}" onerror="this.src='https://assets.chatwork.com/images/common/avatar/default_room.svg'" />
-            <div class="chat-item-info">
-              <div class="chat-item-title">${escapeHtml(room.name)}</div>
-              <div class="chat-item-sub">${room.unread_num > 0 ? room.unread_num + '件の未読' : 'メッセージを表示'}</div>
-            </div>
-            ${pin}
-          </div>
-        `;
+        return '<div class="chat-item ' + activeClass + '" onclick="selectRoom(' + room.room_id + ', \'' + escapeHtml(room.name) + '\')">' +
+          '<img class="chat-avatar" src="' + avatar + '" onerror="this.src=\'https://assets.chatwork.com/images/common/avatar/default_room.svg\'" />' +
+          '<div class="chat-item-info">' +
+            '<div class="chat-item-title">' + escapeHtml(room.name) + '</div>' +
+            '<div class="chat-item-sub">' + (room.unread_num > 0 ? room.unread_num + '件の未読' : 'メッセージを表示') + '</div>' +
+          '</div>' +
+          pin +
+        '</div>';
       }).join('');
     }
 
     async function selectRoom(roomId, roomName) {
       currentRoomId = roomId;
-      document.querySelector('.room-title').innerHTML = `📌 ${roomName}`;
+      document.querySelector('.room-title').innerHTML = '📌 ' + roomName;
 
       loadRooms();
 
@@ -447,38 +445,38 @@ function getHtmlPage() {
       await loadMessages(roomId, true);
 
       if (pollingTimer) clearInterval(pollingTimer);
-      pollingTimer = setInterval(() => {
+      pollingTimer = setInterval(function() {
         if (currentRoomId) loadMessages(currentRoomId, false);
       }, 3000);
     }
 
     async function loadMembers(roomId) {
       try {
-        const members = await apiRequest(`/api/members?room_id=${roomId}`);
+        var members = await apiRequest('/api/members?room_id=' + roomId);
         currentMembersMap = {};
-        members.forEach(m => currentMembersMap[m.account_id] = m);
+        members.forEach(function(m) { currentMembersMap[m.account_id] = m; });
 
-        const avatarsEl = document.getElementById('memberAvatars');
-        avatarsEl.innerHTML = members.slice(0, 5).map(m => 
-          `<img src="${m.avatar_image_url}" title="${escapeHtml(m.name)}" />`
-        ).join('') + (members.length > 5 ? `<span class="member-count-badge">+${members.length - 5}</span>` : '');
+        var avatarsEl = document.getElementById('memberAvatars');
+        avatarsEl.innerHTML = members.slice(0, 5).map(function(m) {
+          return '<img src="' + m.avatar_image_url + '" title="' + escapeHtml(m.name) + '" />';
+        }).join('') + (members.length > 5 ? '<span class="member-count-badge">+' + (members.length - 5) + '</span>' : '');
 
-        const dropdownEl = document.getElementById('toDropdown');
-        dropdownEl.innerHTML = members.map(m => `
-          <div class="member-dropdown-item" onclick="insertToTag(${m.account_id}, '${escapeHtml(m.name)}')">
-            <img src="${m.avatar_image_url}" />
-            <span>${escapeHtml(m.name)}</span>
-          </div>
-        `).join('');
+        var dropdownEl = document.getElementById('toDropdown');
+        dropdownEl.innerHTML = members.map(function(m) {
+          return '<div class="member-dropdown-item" onclick="insertToTag(' + m.account_id + ', \'' + escapeHtml(m.name) + '\')">' +
+            '<img src="' + m.avatar_image_url + '" />' +
+            '<span>' + escapeHtml(m.name) + '</span>' +
+          '</div>';
+        }).join('');
 
       } catch (err) {
         console.error('Members error:', err);
       }
     }
 
-    async function loadMessages(roomId, shouldScroll = false) {
+    async function loadMessages(roomId, shouldScroll) {
       try {
-        const messages = await apiRequest(`/api/messages?room_id=${roomId}`);
+        var messages = await apiRequest('/api/messages?room_id=' + roomId);
         renderMessages(messages, shouldScroll);
       } catch (err) {
         console.error('Messages error:', err);
@@ -486,33 +484,31 @@ function getHtmlPage() {
     }
 
     function renderMessages(messages, shouldScroll) {
-      const area = document.getElementById('messagesArea');
+      var area = document.getElementById('messagesArea');
       if (!messages || messages.length === 0) {
         if (shouldScroll) area.innerHTML = '<div class="empty-state">メッセージはありません</div>';
         return;
       }
 
-      const html = messages.map(msg => {
-        const isHighlight = msg.body.includes('[reply') || msg.body.includes('[To');
-        const parsedBody = parseChatworkText(msg.body);
-        const timeStr = formatTime(msg.send_time);
+      var html = messages.map(function(msg) {
+        var isHighlight = msg.body.includes('[reply') || msg.body.includes('[To');
+        var parsedBody = parseChatworkText(msg.body);
+        var timeStr = formatTime(msg.send_time);
 
-        return `
-          <div class="msg-item ${isHighlight ? 'highlight' : ''}" id="msg-${msg.message_id}">
-            <img class="msg-avatar" src="${msg.account.avatar_image_url}" />
-            <div class="msg-content">
-              <div class="msg-header">
-                <span class="msg-author">${escapeHtml(msg.account.name)}</span>
-                <span class="msg-time">${timeStr}</span>
-              </div>
-              <div class="msg-body">${parsedBody}</div>
-            </div>
-            <div class="msg-actions">
-              <button onclick="replyToMessage(${msg.account.account_id}, '${msg.message_id}', '${escapeHtml(msg.account.name)}')">RE 返信</button>
-              <button onclick="insertToTag(${msg.account.account_id}, '${escapeHtml(msg.account.name)}')">TO</button>
-            </div>
-          </div>
-        `;
+        return '<div class="msg-item ' + (isHighlight ? 'highlight' : '') + '" id="msg-' + msg.message_id + '">' +
+          '<img class="msg-avatar" src="' + msg.account.avatar_image_url + '" />' +
+          '<div class="msg-content">' +
+            '<div class="msg-header">' +
+              '<span class="msg-author">' + escapeHtml(msg.account.name) + '</span>' +
+              '<span class="msg-time">' + timeStr + '</span>' +
+            '</div>' +
+            '<div class="msg-body">' + parsedBody + '</div>' +
+          '</div>' +
+          '<div class="msg-actions">' +
+            '<button onclick="replyToMessage(' + msg.account.account_id + ', \'' + msg.message_id + '\', \'' + escapeHtml(msg.account.name) + '\')">RE 返信</button>' +
+            '<button onclick="insertToTag(' + msg.account.account_id + ', \'' + escapeHtml(msg.account.name) + '\')">TO</button>' +
+          '</div>' +
+        '</div>';
       }).join('');
 
       area.innerHTML = html;
@@ -523,8 +519,8 @@ function getHtmlPage() {
     }
 
     async function sendMessage() {
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
+      var input = document.getElementById('chatInput');
+      var text = input.value.trim();
       if (!text || !currentRoomId) return;
 
       try {
@@ -540,44 +536,44 @@ function getHtmlPage() {
     }
 
     function replyToMessage(aid, mid, name) {
-      const input = document.getElementById('chatInput');
-      input.value = `[reply account_id=${aid} mid=${mid}] ${name}\n` + input.value;
+      var input = document.getElementById('chatInput');
+      input.value = '[reply account_id=' + aid + ' mid=' + mid + '] ' + name + '\n' + input.value;
       input.focus();
     }
 
     function toggleToDropdown() {
-      const dd = document.getElementById('toDropdown');
+      var dd = document.getElementById('toDropdown');
       dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
     }
 
     function insertToTag(aid, name) {
-      const input = document.getElementById('chatInput');
-      input.value = `[To:${aid}] ${name}\n` + input.value;
+      var input = document.getElementById('chatInput');
+      input.value = '[To:' + aid + '] ' + name + '\n' + input.value;
       document.getElementById('toDropdown').style.display = 'none';
       input.focus();
     }
 
     function insertSymbol(symbol) {
-      const input = document.getElementById('chatInput');
+      var input = document.getElementById('chatInput');
       input.value += symbol;
       input.focus();
     }
 
     function parseChatworkText(text) {
       if (!text) return '';
-      let html = escapeHtml(text);
+      var html = escapeHtml(text);
 
-      html = html.replace(/\[info\]([\s\S]*?)\[\/info\]/gi, (m, p1) => `<div class="cw-info-box">${p1}</div>`);
-      html = html.replace(/\[title\]([\s\S]*?)\[\/title\]/gi, (m, p1) => `<div class="cw-info-title">${p1}</div>`);
+      html = html.replace(/\[info\]([\s\S]*?)\[\/info\]/gi, function(m, p1) { return '<div class="cw-info-box">' + p1 + '</div>'; });
+      html = html.replace(/\[title\]([\s\S]*?)\[\/title\]/gi, function(m, p1) { return '<div class="cw-info-title">' + p1 + '</div>'; });
 
-      html = html.replace(/\[reply account_id=(\d+) mid=(\d+)\]/gi, (m, aid, mid) => {
-        const name = currentMembersMap[aid] ? currentMembersMap[aid].name : aid;
-        return `<span class="cw-reply-badge">←RE 返信元 <b>${escapeHtml(name)}</b></span>`;
+      html = html.replace(/\[reply account_id=(\d+) mid=(\d+)\]/gi, function(m, aid, mid) {
+        var name = currentMembersMap[aid] ? currentMembersMap[aid].name : aid;
+        return '<span class="cw-reply-badge">←RE 返信元 <b>' + escapeHtml(name) + '</b></span>';
       });
 
-      html = html.replace(/\[To:(\d+)\]/gi, (m, aid) => {
-        const name = currentMembersMap[aid] ? currentMembersMap[aid].name : aid;
-        return `<span class="cw-to-badge">TO <b>${escapeHtml(name)}</b></span>`;
+      html = html.replace(/\[To:(\d+)\]/gi, function(m, aid) {
+        var name = currentMembersMap[aid] ? currentMembersMap[aid].name : aid;
+        return '<span class="cw-to-badge">TO <b>' + escapeHtml(name) + '</b></span>';
       });
 
       html = html.replace(/\[qt\]([\s\S]*?)\[\/qt\]/gi, '<blockquote class="cw-quote">$1</blockquote>');
@@ -589,12 +585,12 @@ function getHtmlPage() {
 
     function formatTime(timestamp) {
       if (!timestamp) return '';
-      const d = new Date(timestamp * 1000);
-      const m = d.getMonth() + 1;
-      const date = d.getDate();
-      const h = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      return `${m}月${date}日 ${h}:${min}`;
+      var d = new Date(timestamp * 1000);
+      var m = d.getMonth() + 1;
+      var date = d.getDate();
+      var h = String(d.getHours()).padStart(2, '0');
+      var min = String(d.getMinutes()).padStart(2, '0');
+      return m + '月' + date + '日 ' + h + ':' + min;
     }
 
     function escapeHtml(str) {
@@ -612,5 +608,5 @@ function getHtmlPage() {
 }
 
 server.listen(PORT, () => {
-  console.log(`Chatwork Web App listening on http://localhost:${PORT}`);
+  console.log('Chatwork Web App listening on http://localhost:' + PORT);
 });
