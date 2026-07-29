@@ -1,225 +1,616 @@
-const express = require('express');
-const app = express();
+const http = require('http');
+const url = require('url');
 
-// JSONデータを受け取るための設定
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// フリモメン語録データ（ご提示いただいたJSONデータそのまま）
-const responses = {
-  "all": [
-    "<b>呼ばれてないけど飛び出たフリーモーションメーーン！！</b>",
-    "<b>報酬はスイス銀行に振り込んでくれ</b>",
-    "<b>俺の手にかかればFlash作成も赤子の手をひねる極悪さだから<br>俺は赤子の手はひねらない！</b>",
-    "<b>まあまあ、その方が楽しいかもしれないぜ　俺が。</b>",
-    "<b>理系の俺様的には超ウラン元素であるメンデレビウムの印象が強いな。</b>",
-    "<b>…やべぇ、ほんまもんだコイツ！</b>",
-    "<b>お駄賃くれ</b>",
-    "<b>とにかく俺と一緒にFlash作成の深さを理解するのだ！答はイエスorはいだ！！</b>",
-    "<b>アキバは深いな</b>",
-    "<b>…そろそろツッコまれる気がするぞ！</b>",
-    "<b>のび太くん宿題は終わったのかい!?</b>",
-    "<b>【SSR】俺とタオルの人、2人の力を合わせて刑法を最初のページから順番に違反していくぞ！</b>",
-    "<b>おっと、警察には通報しないでくれ</b>",
-    "<b>おっと、声が良すぎたみたいだな！</b>",
-    "<b>お巡りさん、俺です！</b>",
-    "<b>Flashは死んでなんかいない！俺達の心のなかで生きているんだ！！</b>",
-    "<b>Flashを知らないなんて遅れてるぞ？</b>",
-    "<b>逮捕！</b>",
-    "<b>お前は今までに洗濯したターコイズブルータイツの枚数を覚えているか？</b>",
-    "<b>ギターは任せてくれ。知り合いの金髪ちゃんがプロなんだ</b>",
-    "<b>このわざとらしいターコイズブルー！</b>",
-    "<b>この戦いが終わったら、ツイートするんだ…</b>",
-    "<b>これが兄弟愛！</b>",
-    "<b>そのキレイな顔をぶっ飛ばしてやるぜ</b>",
-    "<b>魔法少女に変身だ！</b>",
-    "<b>いつもあなたのそばに。振り向けばフリモメン。</b>",
-    "<b>おめでとう︕今⽇から君はフリモメンだ︕</b>",
-    "<b>さあよいこのみんな︕フリモメンしような︕</b>",
-    "<b>君もフリモメンになるんだよ︕</b>",
-    "<b>どうも、弦巻マキです</b>",
-    "<b>代わりにヨーグルト食べておいたよ。</b>",
-    "<b>なるほど…。トド岩送りだ！！</b>",
-    "<b>可愛いフリモメンかと思った︖残念︕小春六花ちゃんでした︕</b>",
-    "<b>北海道で全身タイツは流⽯にまずったな…</b>",
-    "<b>魔女っ子フリモたん登っ場～！</b>",
-    "<b>働きたくない！！！</b>",
-    "<b>おや？間違ったかな？お兄ちゃんだからな！</b>",
-    "<b>迷えるFlash職人見習いのつよーい味方、フリモです☆</b>",
-    "<b>どうしてこんなになるまで放っておいたんだ　おい！</b>",
-    "<b>世の中何でも美少女が出ればいいとか思うなってコトさ。</b>",
-    "<b>こんなところにいられるか！俺は部屋に戻らせてもらう！</b>",
-    "<b>･･･まー、よく考えたら俺ら、 ビジネスソフト扱いだから関係ないかー</b>",
-    "<b>まあまあちょっと最初にキャラの立ち具合について話しあおうぜ！</b>",
-    "<b>あーもう面倒くさいなー</b>",
-    "<b>おおっと 具体的な商標名を言うとややこしくなるから穏やかに頼むぜ</b>",
-    "<b>恋する力で可憐に咲くんだぜ</b>"
-  ],
-  "あいさつ": [
-    "<b>呼ばれてないけど飛び出たフリーモーションメーーン！！</b>",
-    "やぁ、フリモメンだよ。何か用かい？😊✨"
-  ],
-  "自己紹介": [
-    "<b>やぁブラザー、フリモメンだよ！</b>これは既存キャラのbotアカウントだ。<br>本部や「フリモメンbotであそぼう」ルームでメンションするとランダムな語録をつぶやくぞ！メンションの後に特定の単語を打つとキーワードで指定できるから、ぜひやってみてくれ。詳しい使い方は俺のプロフィールのURLから見るといいぞ。<br>なにかあればろし郎にDMで教えてほしい。よろしくな！"
-  ],
-  "すき": [
-    "<b>あいしてるぞブラザー！</b>",
-    "<b>ズッ友だょ♥</b>",
-    "<b>恋する力で可憐に咲くんだぜ</b>"
-  ],
-  "どう思う": [
-    "<b>まあまあ、その方が楽しいかもしれないぜ　俺が。</b>",
-    "<b>理系の俺様的には超ウラン元素であるメンデレビウムの印象が強いな。</b>",
-    "<b>…やべぇ、ほんまもんだコイツ！</b>",
-    "<b>逮捕！</b>",
-    "<b>なるほど…。トド岩送りだ！！</b>",
-    "<b>どうしてこんなになるまで放っておいたんだ　おい！</b>",
-    "<b>…そろそろツッコまれる気がするぞ！</b>",
-    "<b>世の中何でも美少女が出ればいいとか思うなってコトさ。</b>",
-    "<b>こんなところにいられるか！俺は部屋に戻らせてもらう！</b>",
-    "<b>･･･まー、よく考えたら俺ら、 ビジネスソフト扱いだから関係ないかー</b>",
-    "<b>まあまあちょっと最初にキャラの立ち具合について話しあおうぜ！</b>",
-    "<b>あーもう面倒くさいなー</b>",
-    "<b>あー、そろそろコイツ黙らせるから</b>",
-    "<b>恋する力で可憐に咲くんだぜ</b>"
-  ],
-  "祝": [
-    "<b>【祝】自動化成功！！！</b><br>Izuemonたんの協力をもってフリモメンbotはついに完璧な自動プログラムを得たぞ!!🎉🎉<br>好きな時にいつでもメンションして俺に話しかけてくれ。DMには対応していないから注意だぞ！"
-  ],
-  "褒めて": [
-    "<b>えらいぞブラザー！！よく頑張ったな😊✨✨</b>"
-  ],
-  "フリモメンとは": [
-    "<b>フリモメンとは、現在AHS社が開発している広義のボカロ兼ボイロ製品のキャラクターだ！</b><br>正確に言うとボカロではなくSynthV、ボイロではなくVOICEPEAKだな。<br>始まりは2006年、Flashというサービスがネット上で流行したときに関連して生まれたソフト「Free motion」に宣伝用のweb4コマ漫画がつけられたところからだ。<br>20年が経ってFlash亡き今も、過去を忘れぬ妖精として頑張っているぞ！"
-  ],
-  "おはよう": [
-    "<b>おはようブラザー！いい朝だな！</b>"
-  ],
-  "おやすみ": [
-    "<b>おやすみ！よく寝るんだぞ💪💪</b>"
-  ],
-  "労働": [
-    "<b>働きたくない！！！</b>"
-  ],
-  "褒めて差し上げるだよ!  お願いです": [
-    "<b>【SSR】俺とタオルの人、2人の力を合わせて刑法を最初のページから順番に違反していくぞ！</b>"
-  ],
-  "ようこそ": [
-    "<b>チャットルームへようこそ！楽しんでいってな！</b>"
-  ],
-  "宮城県": [
-    "<b>宮城県白石市は俺ゆかりの地！</b><br>どこかの土産屋にご当地フリモメングッズがおいてるから、ぜひ探してみてくれ😊✨"
-  ],
-  "北海道": [
-    "<b>北海道小樽市は小春六花ちゃんゆかりの地、つまり俺ゆかりの地だ！</b><br>商店街には小樽波風高校の3人がたくさんいるから、ぜひ探してみてくれよな💪"
-  ],
-  "元祖": [
-    "<b>迷えるFlash職人見習いのつよーい味方、フリモです☆</b>",
-    "<b>呼ばれてないけど飛び出たフリーモーションメーーン！！</b>",
-    "<b>報酬はスイス銀行に振り込んでくれ</b>",
-    "<b>俺の手にかかればFlash作成も赤子の手をひねる極悪さだから<br>俺は赤子の手はひねらない！</b>",
-    "<b>まあまあ、その方が楽しいかもしれないぜ　俺が。</b>",
-    "<b>理系の俺様的には超ウラン元素であるメンデレビウムの印象が強いな。</b>",
-    "<b>…やべぇ、ほんまもんだコイツ！</b>",
-    "<b>お駄賃くれ</b>",
-    "<b>とにかく俺と一緒にFlash作成の深さを理解するのだ！答はイエスorはいだ！！</b>",
-    "<b>アキバは深いな</b>",
-    "<b>…そろそろツッコまれる気がするぞ！</b>",
-    "<b>のび太くん宿題は終わったのかい!?</b>",
-    "<b>世の中何でも美少女が出ればいいとか思うなってコトさ。</b>",
-    "<b>まあまあちょっと最初にキャラの立ち具合について話しあおうぜ！</b>"
-  ],
-  "ただいま": [
-    "<b>おかえり！待ってたぞ🥹</b>"
-  ],
-  "よろしく": [
-    "<b>よろしく頼むぞブラザー！</b>"
-  ],
-  "慰めて": [
-    "<b>フリモメンはいつも隣にいるぞ！</b>"
-  ],
-  "東京都": [
-    "<b>フリーモーションが良いソフトでも知ってもらわなくては話にならないっ！<br>アキバの路上で告知だッ！</b>"
-  ],
-  "金": [
-    "<b>報酬はスイス銀行に振り込んでくれ</b>",
-    "<b>お駄賃くれ</b>"
-  ],
-  "Flashとは": [
-    "<b>Flashとは、2000年～2007年ごろに大流行した現adobe社のサービスだ！</b><br>youtubeやニコニコが存在しなかった頃にゲームや動画・アニメーションを作るためにできたもので、動作は今でいうとscratchのプロジェクトに近いな。<br>当時2ちゃんねるの普及などと共に「おもしろフラッシュ」というジャンルが大流行したが、容量が重くてスマホに非対応だったりしたことから2020年までにはすべてサービス終了してしまった……。<br><b>だが案ずるでない！Flashは俺達の心のなかで生きているんだ！！</b>"
-  ],
-  "ばい": [
-    "<b>【UR】温泉だあ～</b>"
-  ],
-  "タオルの人": [
-    "<b>元気かタカスィ～</b>"
-  ],
-  "たかし": [
-    "<b>【UR】温泉だあ～</b>"
-  ],
-  "トド岩とは": [
-    "<b>トド岩は北海道小樽市にある、観光名所の…岩だぞ！</b>"
-  ],
-  "製作者てすとぉe389": [
-    ["ああああ","imgs/ZL1CRJWu.jpg"]
-  ],
-  "警察": [
-    "<b>逮捕！</b>",
-    "<b>お巡りさん、俺です！</b>"
-  ],
-  "フリモたん": [
-    "<b>世の中何でも美少女が出ればいいとか思うなってコトさ。</b>",
-    "<b>魔法少女に変身だ！</b>",
-    "<b>魔女っ子フリモたん登っ場～！</b>"
-  ],
-  "アイコン": [
-    "<b>【アイコンの変え方】</b><br>①左下の自分のアイコンをクリック<br>②「個人設定」を押し、プロフィール欄にある自分のアイコンをクリック<br>③「新しい画像のアップロード」を選択し、好きな画像を選ぶ<br>④俺の顔をアイコンにすると楽しいかもしれないぜ、俺が。<br><br><b>これで完成だ！</b>これからもITRSAをよろしく頼むぞ！"
-  ]
-};
+// Chatwork API Fetcher
+async function cwFetch(endpoint, apiKey, options = {}) {
+  const reqUrl = `https://api.chatwork.com/v2${endpoint}`;
+  const headers = {
+    'X-ChatWorkToken': apiKey,
+    ...(options.headers || {})
+  };
 
-// ============================================
-// カスタム関数用のエンドポイント
-// ============================================
-app.post('/function/bot', (req, res) => {
-    // Channel.worksから送られてくるテキストを取得（未定義の場合は空文字にする）
-    const text = req.body.message || "";
+  const response = await fetch(reqUrl, {
+    method: options.method || 'GET',
+    headers: headers,
+    body: options.body
+  });
 
-    let replyText = "";
+  const contentType = response.headers.get('content-type') || '';
+  let data;
+  if (contentType.includes('application/json')) {
+    data = await response.json();
+  } else {
+    data = await response.text();
+  }
 
-    // 1. "all" 以外のすべてのキーワードキーを取得
-    const keys = Object.keys(responses).filter(k => k !== 'all');
-    
-    // 2. ユーザーが送ってきたテキストの中に、キーワードが含まれているかチェック
-    const matchedKey = keys.find(k => text.includes(k));
+  if (!response.ok) {
+    const errorMsg = typeof data === 'object' ? JSON.stringify(data) : data;
+    throw new Error(`Chatwork API Error (${response.status}): ${errorMsg}`);
+  }
 
-    let selectedItem;
+  return data;
+}
 
-    if (matchedKey) {
-        // キーワードに一致した場合、そのリストからランダムに1つ選ぶ
-        const list = responses[matchedKey];
-        selectedItem = list[Math.floor(Math.random() * list.length)];
-    } else {
-        // キーワードに一致しない（または単に @ねむ と呼ばれただけ）場合は "all" からランダム
-        const list = responses['all'];
-        selectedItem = list[Math.floor(Math.random() * list.length)];
+const server = http.createServer(async (req, res) => {
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname;
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-ChatWorkToken');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const sendJSON = (status, payload) => {
+    res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(payload));
+  };
+
+  const sendHTML = (html) => {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+  };
+
+  try {
+    if (pathname === '/' || pathname === '/index.html') {
+      sendHTML(getHtmlPage());
+      return;
     }
 
-    // 3. 配列の中に配列が入っていた場合の安全対策（製作者てすとぉ対応）
-    if (Array.isArray(selectedItem)) {
-        replyText = selectedItem[0]; // テキスト部分（"ああああ"）だけを抽出
-    } else {
-        replyText = selectedItem;
+    const apiKey = req.headers['x-chatworktoken'] || req.headers['x-api-key'];
+
+    if (pathname.startsWith('/api/')) {
+      if (!apiKey) {
+        return sendJSON(401, { error: 'API Key (X-ChatWorkToken) は必須です' });
+      }
+
+      if (pathname === '/api/me' && req.method === 'GET') {
+        const data = await cwFetch('/me', apiKey);
+        return sendJSON(200, data);
+      }
+
+      if (pathname === '/api/rooms' && req.method === 'GET') {
+        const data = await cwFetch('/rooms', apiKey);
+        return sendJSON(200, data);
+      }
+
+      if (pathname === '/api/messages' && req.method === 'GET') {
+        const roomId = parsedUrl.query.room_id;
+        if (!roomId) return sendJSON(400, { error: 'room_id が指定されていません' });
+        const data = await cwFetch(`/rooms/${roomId}/messages?force=1`, apiKey);
+        return sendJSON(200, data);
+      }
+
+      if (pathname === '/api/members' && req.method === 'GET') {
+        const roomId = parsedUrl.query.room_id;
+        if (!roomId) return sendJSON(400, { error: 'room_id が指定されていません' });
+        const data = await cwFetch(`/rooms/${roomId}/members`, apiKey);
+        return sendJSON(200, data);
+      }
+
+      if (pathname === '/api/send' && req.method === 'POST') {
+        let bodyStr = '';
+        req.on('data', chunk => { bodyStr += chunk.toString(); });
+        req.on('end', async () => {
+          try {
+            const params = JSON.parse(bodyStr);
+            if (!params.room_id || !params.body) {
+              return sendJSON(400, { error: 'room_id と body は必須です' });
+            }
+            const postBody = new URLSearchParams({ body: params.body }).toString();
+            const data = await cwFetch(`/rooms/${params.room_id}/messages`, apiKey, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: postBody
+            });
+            return sendJSON(200, data);
+          } catch (e) {
+            return sendJSON(500, { error: e.message });
+          }
+        });
+        return;
+      }
+
+      return sendJSON(404, { error: 'API Route Not Found' });
     }
 
-    // 4. 結果をJSONでChannel.worksに返す
-    res.json({
-        "resultText": replyText
-    });
+    sendJSON(404, { error: 'Not Found' });
+  } catch (err) {
+    console.error(err);
+    sendJSON(500, { error: err.message });
+  }
 });
 
-// ============================================
-// サーバー起動処理
-// ============================================
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`フリモメンBot (カスタム関数版) 稼働中 - Port: ${PORT}`);
+function getHtmlPage() {
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatwork Client</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background-color: #f4f5f7; color: #333; }
+
+    /* Alert Bar */
+    .alert-bar { background-color: #fcf1f1; color: #c53929; font-size: 12px; padding: 6px 16px; display: flex; align-items: center; border-bottom: 1px solid #f8d7da; }
+    .alert-bar span { margin-left: 8px; font-weight: bold; cursor: pointer; text-decoration: underline; }
+
+    /* Header */
+    header { background-color: #1b2538; color: #fff; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .logo { font-size: 20px; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .logo-icon { width: 22px; height: 22px; background-color: #e24e42; border-radius: 50%; display: inline-block; }
+    .search-box input { background: #2b364a; border: none; padding: 6px 12px; border-radius: 4px; color: #fff; font-size: 13px; width: 240px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .api-key-input { display: flex; gap: 6px; align-items: center; background: #2b364a; padding: 4px 8px; border-radius: 4px; }
+    .api-key-input input { background: transparent; border: none; color: #fff; font-size: 12px; width: 200px; outline: none; }
+    .btn-api-save { background: #0080ff; color: #fff; border: none; padding: 4px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; }
+    .user-info { font-size: 12px; color: #ccc; display: flex; align-items: center; gap: 6px; }
+
+    /* Main Container */
+    .main-container { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left Sidebar - Chat List */
+    .sidebar-left { width: 260px; background-color: #eef1f4; border-right: 1px solid #dce1e6; display: flex; flex-direction: column; flex-shrink: 0; }
+    .chat-list-header { padding: 12px 14px; font-size: 13px; font-weight: bold; color: #1b2538; display: flex; justify-content: space-between; border-bottom: 1px solid #dce1e6; }
+    .chat-list { flex: 1; overflow-y: auto; }
+    .chat-item { display: flex; align-items: center; padding: 10px 12px; gap: 10px; cursor: pointer; border-bottom: 1px solid #e2e7ec; position: relative; }
+    .chat-item:hover { background-color: #e2e7ec; }
+    .chat-item.active { background-color: #2e3a4e; color: #fff; }
+    .chat-item.active .chat-item-title { color: #fff; }
+    .chat-avatar { width: 36px; height: 36px; border-radius: 50%; background: #ccc; flex-shrink: 0; object-fit: cover; }
+    .chat-item-info { flex: 1; overflow: hidden; }
+    .chat-item-title { font-size: 13px; font-weight: bold; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-item-sub { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .chat-item.active .chat-item-sub { color: #aaa; }
+    .pin-icon { color: #0080ff; font-size: 12px; }
+    .chat-item.active .pin-icon { color: #64b5f6; }
+
+    /* Center Chat Area */
+    .chat-view { flex: 1; display: flex; flex-direction: column; background-color: #fff; overflow: hidden; position: relative; }
+    .room-header { height: 50px; border-bottom: 1px solid #e1e6eb; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: #fafbfc; }
+    .room-title { font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    .room-actions { display: flex; align-items: center; gap: 8px; }
+    .member-avatars { display: flex; align-items: center; margin-right: 8px; }
+    .member-avatars img { width: 24px; height: 24px; border-radius: 50%; margin-left: -6px; border: 2px solid #fff; }
+    .member-count-badge { background: #4a5568; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: -4px; }
+    .btn-action { border: 1px solid #ccc; background: #fff; padding: 4px 10px; font-size: 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+    /* Message Log Area */
+    .messages-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; background-color: #ffffff; }
+    .msg-item { display: flex; gap: 12px; font-size: 13px; line-height: 1.5; padding: 6px 8px; border-radius: 6px; transition: background 0.2s; position: relative; }
+    .msg-item:hover { background-color: #f7f9fa; }
+    .msg-item:hover .msg-actions { display: flex; }
+    .msg-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .msg-content { flex: 1; }
+    .msg-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    .msg-author { font-weight: bold; color: #1b2538; font-size: 13px; }
+    .msg-time { font-size: 11px; color: #888; }
+    .msg-body { color: #222; word-break: break-word; }
+
+    /* Highlighted or Special Message Styles */
+    .msg-item.highlight { background-color: #eefbf3; border-left: 4px solid #2ecc71; }
+    .cw-reply-badge { display: inline-flex; align-items: center; gap: 4px; background-color: #e8f4f8; color: #1d70b8; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-bottom: 4px; cursor: pointer; }
+    .cw-to-badge { display: inline-flex; align-items: center; gap: 4px; background-color: #e1f5fe; color: #0288d1; padding: 1px 5px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+    .cw-info-box { border: 1px solid #c8d6e5; border-radius: 4px; padding: 8px 12px; background: #f8fafc; margin: 4px 0; font-size: 12px; }
+    .cw-info-title { font-weight: bold; margin-bottom: 4px; color: #2c3e50; border-bottom: 1px solid #e1e6eb; padding-bottom: 2px; }
+    .cw-quote { border-left: 3px solid #b2bec3; padding-left: 8px; color: #636e72; font-style: italic; margin: 4px 0; }
+
+    /* Action Buttons on Hover */
+    .msg-actions { display: none; position: absolute; right: 12px; top: 6px; background: #fff; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .msg-actions button { background: #fff; border: none; padding: 4px 8px; font-size: 11px; cursor: pointer; color: #333; }
+    .msg-actions button:hover { background: #f0f0f0; color: #0080ff; }
+
+    /* Message Input Box */
+    .input-container { border-top: 1px solid #e1e6eb; background: #fafbfc; padding: 10px 16px; flex-shrink: 0; }
+    .input-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .toolbar-left { display: flex; gap: 10px; }
+    .tool-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: #555; padding: 2px 6px; border-radius: 3px; }
+    .tool-btn:hover { background: #e0e0e0; }
+    .chat-textarea { width: 100%; height: 70px; border: 1px solid #ccc; border-radius: 4px; padding: 8px; font-size: 13px; resize: none; outline: none; }
+    .chat-textarea:focus { border-color: #0080ff; }
+    .input-footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 6px; }
+    .send-option { font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px; }
+    .btn-send { background-color: #1573e6; color: #fff; border: none; padding: 6px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .btn-send:hover { background-color: #115bb7; }
+
+    /* Right Sidebar - Info/Task */
+    .sidebar-right { width: 260px; background-color: #f8fafc; border-left: 1px solid #dce1e6; padding: 12px; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; overflow-y: auto; }
+    .panel-box { background: #fff; border: 1px solid #e1e6eb; border-radius: 6px; padding: 12px; }
+    .panel-title { font-size: 13px; font-weight: bold; color: #1b2538; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .panel-content { font-size: 12px; color: #666; }
+    .notice-box { background: #fff8e1; border: 1px solid #ffe082; color: #8d6e63; padding: 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+
+    /* TO Selector Modal/Dropdown */
+    .member-dropdown { position: absolute; bottom: 110px; left: 16px; width: 220px; background: #fff; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 200px; overflow-y: auto; display: none; z-index: 100; }
+    .member-dropdown-item { padding: 8px 12px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .member-dropdown-item:hover { background-color: #f0f4f8; }
+    .member-dropdown-item img { width: 20px; height: 20px; border-radius: 50%; }
+
+    /* Loading / Empty States */
+    .empty-state { display: flex; justify-content: center; align-items: center; height: 100%; color: #999; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Alert Bar -->
+  <div class="alert-bar">
+    ⚠️ フリープラン利用中。一部機能が制限されています。<span>制限の詳細 ▸</span>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon"></span> Chatwork
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="チャット名、メッセージ内容..." />
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="api-key-input">
+        <input type="password" id="apiKeyInput" placeholder="API Keyを入力..." />
+        <button class="btn-api-save" onclick="saveApiKey()">保存</button>
+      </div>
+      <div class="user-info" id="userInfo">未ログイン</div>
+    </div>
+  </header>
+
+  <!-- Main Area -->
+  <div class="main-container">
+
+    <!-- Left Sidebar: Chat List -->
+    <div class="sidebar-left">
+      <div class="chat-list-header">
+        <span>すべてのチャット <span id="roomCount">(0)</span> ▾</span>
+        <span style="cursor:pointer;" onclick="loadRooms()">🔄</span>
+      </div>
+      <div class="chat-list" id="chatList">
+        <div class="empty-state">API Keyを入力してください</div>
+      </div>
+    </div>
+
+    <!-- Center Chat Area -->
+    <div class="chat-view">
+      <!-- Room Header -->
+      <div class="room-header" id="roomHeader">
+        <div class="room-title">チャットを選択してください</div>
+        <div class="room-actions">
+          <div class="member-avatars" id="memberAvatars"></div>
+          <button class="btn-action">+ 招待</button>
+        </div>
+      </div>
+
+      <!-- Messages Area -->
+      <div class="messages-area" id="messagesArea">
+        <div class="empty-state">左メニューからチャットを選択してください</div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-container">
+        <!-- TO Dropdown -->
+        <div class="member-dropdown" id="toDropdown"></div>
+
+        <div class="input-toolbar">
+          <div class="toolbar-left">
+            <button class="tool-btn" onclick="toggleToDropdown()">TO</button>
+            <button class="tool-btn" onclick="insertSymbol('😊')">😊</button>
+            <button class="tool-btn">📎</button>
+            <button class="tool-btn">🎥</button>
+          </div>
+        </div>
+        <textarea class="chat-textarea" id="chatInput" placeholder="ここにメッセージ内容を入力 (Shift + Enterキーで改行)"></textarea>
+        <div class="input-footer">
+          <label class="send-option">
+            <input type="checkbox" id="enterSendCheck" checked> Enterで送信
+          </label>
+          <button class="btn-send" onclick="sendMessage()">送信</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="sidebar-right">
+      <div class="notice-box">
+        ℹ️ 参加承認待ちのメンバーがいます (1件)
+      </div>
+
+      <div class="panel-box">
+        <div class="panel-title">
+          <span>概要</span>
+          <span style="cursor:pointer; font-size:11px; color:#0080ff;">✏️</span>
+        </div>
+        <div class="panel-content" id="roomDescription">
+          概要はありません
+        </div>
+      </div>
+
+      <div class="panel-box">
+        <div class="panel-title">
+          <span>タスク</span>
+          <span style="cursor:pointer; font-size:11px; color:#0080ff;">テンプレートを選択 ▾</span>
+        </div>
+        <div class="panel-content">
+          <button class="btn-action" style="width:100%; justify-content:center; color:#0080ff; font-weight:bold;">+ タスク追加</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentApiKey = localStorage.getItem('cw_api_key') || '';
+    let currentRoomId = null;
+    let currentMembersMap = {};
+    let pollingTimer = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (currentApiKey) {
+        document.getElementById('apiKeyInput').value = currentApiKey;
+        initChat();
+      }
+
+      // Enterキー送信対応
+      document.getElementById('chatInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          if (document.getElementById('enterSendCheck').checked) {
+            e.preventDefault();
+            sendMessage();
+          }
+        }
+      });
+    });
+
+    function saveApiKey() {
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (!key) return alert('API Keyを入力してください');
+      localStorage.setItem('cw_api_key', key);
+      currentApiKey = key;
+      initChat();
+    }
+
+    async function apiRequest(endpoint, options = {}) {
+      const headers = {
+        'X-ChatWorkToken': currentApiKey,
+        ...(options.headers || {})
+      };
+      const res = await fetch(endpoint, { ...options, headers });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(errData.error || 'エラーが発生しました');
+      }
+      return await res.json();
+    }
+
+    async function initChat() {
+      try {
+        const me = await apiRequest('/api/me');
+        document.getElementById('userInfo').innerText = me.name;
+        loadRooms();
+      } catch (err) {
+        alert('ログイン失敗: ' + err.message);
+      }
+    }
+
+    async function loadRooms() {
+      try {
+        const rooms = await apiRequest('/api/rooms');
+        document.getElementById('roomCount').innerText = `(${rooms.length})`;
+        renderRoomList(rooms);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderRoomList(rooms) {
+      const listEl = document.getElementById('chatList');
+      if (!rooms || rooms.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">チャットがありません</div>';
+        return;
+      }
+
+      listEl.innerHTML = rooms.map(room => {
+        const activeClass = room.room_id === currentRoomId ? 'active' : '';
+        const pin = room.sticky ? '<span class="pin-icon">📌</span>' : '';
+        const avatar = room.icon_path || 'https://assets.chatwork.com/images/common/avatar/default_room.svg';
+
+        return `
+          <div class="chat-item ${activeClass}" onclick="selectRoom(${room.room_id}, '${escapeHtml(room.name)}')">
+            <img class="chat-avatar" src="${avatar}" onerror="this.src='https://assets.chatwork.com/images/common/avatar/default_room.svg'" />
+            <div class="chat-item-info">
+              <div class="chat-item-title">${escapeHtml(room.name)}</div>
+              <div class="chat-item-sub">${room.unread_num > 0 ? room.unread_num + '件の未読' : 'メッセージを表示'}</div>
+            </div>
+            ${pin}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function selectRoom(roomId, roomName) {
+      currentRoomId = roomId;
+      document.querySelector('.room-title').innerHTML = `📌 ${roomName}`;
+
+      loadRooms();
+
+      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">メッセージ読み込み中...</div>';
+
+      await loadMembers(roomId);
+      await loadMessages(roomId, true);
+
+      if (pollingTimer) clearInterval(pollingTimer);
+      pollingTimer = setInterval(() => {
+        if (currentRoomId) loadMessages(currentRoomId, false);
+      }, 3000);
+    }
+
+    async function loadMembers(roomId) {
+      try {
+        const members = await apiRequest(`/api/members?room_id=${roomId}`);
+        currentMembersMap = {};
+        members.forEach(m => currentMembersMap[m.account_id] = m);
+
+        const avatarsEl = document.getElementById('memberAvatars');
+        avatarsEl.innerHTML = members.slice(0, 5).map(m => 
+          `<img src="${m.avatar_image_url}" title="${escapeHtml(m.name)}" />`
+        ).join('') + (members.length > 5 ? `<span class="member-count-badge">+${members.length - 5}</span>` : '');
+
+        const dropdownEl = document.getElementById('toDropdown');
+        dropdownEl.innerHTML = members.map(m => `
+          <div class="member-dropdown-item" onclick="insertToTag(${m.account_id}, '${escapeHtml(m.name)}')">
+            <img src="${m.avatar_image_url}" />
+            <span>${escapeHtml(m.name)}</span>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        console.error('Members error:', err);
+      }
+    }
+
+    async function loadMessages(roomId, shouldScroll = false) {
+      try {
+        const messages = await apiRequest(`/api/messages?room_id=${roomId}`);
+        renderMessages(messages, shouldScroll);
+      } catch (err) {
+        console.error('Messages error:', err);
+      }
+    }
+
+    function renderMessages(messages, shouldScroll) {
+      const area = document.getElementById('messagesArea');
+      if (!messages || messages.length === 0) {
+        if (shouldScroll) area.innerHTML = '<div class="empty-state">メッセージはありません</div>';
+        return;
+      }
+
+      const html = messages.map(msg => {
+        const isHighlight = msg.body.includes('[reply') || msg.body.includes('[To');
+        const parsedBody = parseChatworkText(msg.body);
+        const timeStr = formatTime(msg.send_time);
+
+        return `
+          <div class="msg-item ${isHighlight ? 'highlight' : ''}" id="msg-${msg.message_id}">
+            <img class="msg-avatar" src="${msg.account.avatar_image_url}" />
+            <div class="msg-content">
+              <div class="msg-header">
+                <span class="msg-author">${escapeHtml(msg.account.name)}</span>
+                <span class="msg-time">${timeStr}</span>
+              </div>
+              <div class="msg-body">${parsedBody}</div>
+            </div>
+            <div class="msg-actions">
+              <button onclick="replyToMessage(${msg.account.account_id}, '${msg.message_id}', '${escapeHtml(msg.account.name)}')">RE 返信</button>
+              <button onclick="insertToTag(${msg.account.account_id}, '${escapeHtml(msg.account.name)}')">TO</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      area.innerHTML = html;
+
+      if (shouldScroll) {
+        area.scrollTop = area.scrollHeight;
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text || !currentRoomId) return;
+
+      try {
+        await apiRequest('/api/send', {
+          method: 'POST',
+          body: JSON.stringify({ room_id: currentRoomId, body: text })
+        });
+        input.value = '';
+        loadMessages(currentRoomId, true);
+      } catch (err) {
+        alert('送信失敗: ' + err.message);
+      }
+    }
+
+    function replyToMessage(aid, mid, name) {
+      const input = document.getElementById('chatInput');
+      input.value = `[reply account_id=${aid} mid=${mid}] ${name}\n` + input.value;
+      input.focus();
+    }
+
+    function toggleToDropdown() {
+      const dd = document.getElementById('toDropdown');
+      dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function insertToTag(aid, name) {
+      const input = document.getElementById('chatInput');
+      input.value = `[To:${aid}] ${name}\n` + input.value;
+      document.getElementById('toDropdown').style.display = 'none';
+      input.focus();
+    }
+
+    function insertSymbol(symbol) {
+      const input = document.getElementById('chatInput');
+      input.value += symbol;
+      input.focus();
+    }
+
+    function parseChatworkText(text) {
+      if (!text) return '';
+      let html = escapeHtml(text);
+
+      html = html.replace(/\[info\]([\s\S]*?)\[\/info\]/gi, (m, p1) => `<div class="cw-info-box">${p1}</div>`);
+      html = html.replace(/\[title\]([\s\S]*?)\[\/title\]/gi, (m, p1) => `<div class="cw-info-title">${p1}</div>`);
+
+      html = html.replace(/\[reply account_id=(\d+) mid=(\d+)\]/gi, (m, aid, mid) => {
+        const name = currentMembersMap[aid] ? currentMembersMap[aid].name : aid;
+        return `<span class="cw-reply-badge">←RE 返信元 <b>${escapeHtml(name)}</b></span>`;
+      });
+
+      html = html.replace(/\[To:(\d+)\]/gi, (m, aid) => {
+        const name = currentMembersMap[aid] ? currentMembersMap[aid].name : aid;
+        return `<span class="cw-to-badge">TO <b>${escapeHtml(name)}</b></span>`;
+      });
+
+      html = html.replace(/\[qt\]([\s\S]*?)\[\/qt\]/gi, '<blockquote class="cw-quote">$1</blockquote>');
+      html = html.replace(/(https?:\/\/[^\s<]+)/gi, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      html = html.replace(/\n/g, '<br>');
+
+      return html;
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) return '';
+      const d = new Date(timestamp * 1000);
+      const m = d.getMonth() + 1;
+      const date = d.getDate();
+      const h = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${m}月${date}日 ${h}:${min}`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>`;
+}
+
+server.listen(PORT, () => {
+  console.log(`Chatwork Web App listening on http://localhost:${PORT}`);
 });
